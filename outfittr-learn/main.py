@@ -5,8 +5,9 @@
     
     The main entry point
 '''
-from outfitter_model import OutfitterModel
+from .outfitter_model import OutfitterModel, FeatureExtractor, create_multilayer_perceptron, process_outfit_features
 from keras.preprocessing import image
+from keras.applications.resnet50 import ResNet50
 from sklearn.model_selection import train_test_split
 import numpy as np
 import os
@@ -30,7 +31,7 @@ def get_images(root_dir):
 
 
 def extract_all_features(clothing_items):
-    model = OutfitterModel()
+    model = FeatureExtractor(ResNet50(weight='imagenet', include_top=False))
     output = {'data': {}}
 
     for i in clothing_items:
@@ -100,7 +101,10 @@ def construct_dataset(surveys, feature_path):
                 clothing_vectors.append(json.load(open('output/tops/' + outfit_json['Tops'] + '.json')))
                 clothing_vectors.append(json.load(open('output/bottoms/' + outfit_json['Bottoms'] + '.json')))
 
-                dataset_input.append((clothing_vectors, context_vector))
+                feature_vector = process_outfit_features(clothing_vectors)
+                input_vector = np.concatenate((feature_vector, [np.asarray(context_vector)]), axis=None)
+
+                dataset_input.append(input_vector)
                 dataset_output.append(rating)
             except IOError as e:
                 print('Failure. Skipping survey...', outfit_json)
@@ -109,13 +113,16 @@ def construct_dataset(surveys, feature_path):
 
 
 items = get_images('data/')
+
 # extract_all_features(items)
 _surveys = json.load(open('data/surveys.json'))
 dataset = construct_dataset(_surveys, 'data/')
+
 # Construct dataset using OutfitterModel.create_model_input_vector()
 train_in, test_in, train_out, test_out = train_test_split(dataset[0], dataset[1], test_size=0.2, shuffle=True)
 
-# history = OutfitterModel.train((train_in, train_out))
-# print(history)
-test_info = OutfitterModel.test((test_in, test_out), 'my_model.h5')
+learn_model = OutfitterModel('my_model.h5', [1, 2, 3, 4, 5], create_multilayer_perceptron)
+history = learn_model.train((train_in, train_out))
+print(history)
+test_info = learn_model.test((test_in, test_out))
 print(test_info)
