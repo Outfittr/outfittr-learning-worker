@@ -5,9 +5,8 @@
     
     The main entry point
 '''
-from learn import OutfitterModel, FeatureExtractor, create_multilayer_perceptron, process_outfit_features
+from .learn import OutfitterModel, FeatureExtractor, create_multilayer_perceptron, process_outfit_features
 from keras.preprocessing import image
-from keras.applications.resnet50 import ResNet50
 from sklearn.model_selection import train_test_split
 import numpy as np
 import os
@@ -31,7 +30,7 @@ def get_images(root_dir):
 
 
 def extract_all_features(clothing_items):
-    model = FeatureExtractor(ResNet50(weight='imagenet', include_top=False))
+    model = FeatureExtractor(feature_extractors["ResNet50"]())  # index should correspond to wanted feature extractor
     output = {'data': {}}
 
     for i in clothing_items:
@@ -110,19 +109,3 @@ def construct_dataset(surveys, feature_path):
                 print('Failure. Skipping survey...', outfit_json)
 
     return dataset_input, dataset_output
-
-
-items = get_images('data/')
-
-# extract_all_features(items)
-_surveys = json.load(open('data/surveys.json'))
-dataset = construct_dataset(_surveys, 'data/')
-
-# Construct dataset using OutfitterModel.create_model_input_vector()
-train_in, test_in, train_out, test_out = train_test_split(dataset[0], dataset[1], test_size=0.2, shuffle=True)
-
-learn_model = OutfitterModel('my_model.h5', [1, 2, 3, 4, 5], create_multilayer_perceptron)
-history = learn_model.train((train_in, train_out))
-print(history)
-test_info = learn_model.test((test_in, test_out))
-print(test_info)

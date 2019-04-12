@@ -32,12 +32,11 @@ class FeatureExtractor:
 
 class OutfitterModel:
 
-    def __init__(self, load_path, classes, architecture):
+    def __init__(self, load_path, classes):
         self.load_path = load_path
         self.classes = classes
 
     def train(self, train_data, architecture, device='/device:GPU:0'):
-
         (train_input, train_output) = train_data
 
         tbcallback = TensorBoard(log_dir='src/', histogram_freq=0, write_graph=True, write_images=True)
@@ -61,17 +60,18 @@ class OutfitterModel:
 
             return history.history
 
-    def test(self, test_data):
-        try:
-            (test_input, test_output) = test_data
 
-            model = load_model(self.load_path)
-            test_acc, test_loss = model.evaluate(test_input, np.asarray(test_output))
+def test(self, test_data, load_path):
+    try:
+        (test_input, test_output) = test_data
 
-            return test_acc, test_loss
-        except (ImportError, ValueError, TypeError) as e:
-            print(e)
-            return "Error"
+        model = load_model(load_path)
+        test_acc, test_loss = model.evaluate(test_input, np.asarray(test_output))
+
+        return test_acc, test_loss
+    except (ImportError, ValueError, TypeError) as e:
+        print(e)
+        return "Error"
 
 
 def process_outfit_features(outfit_features):
@@ -112,9 +112,6 @@ def create_multilayer_perceptron(input_layer_shape, class_count):
     layer_size = 2 ** exp
 
     x = Dense(math.floor(layer_size/512), activation='relu')(inputs)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
     x = Dense(math.floor(layer_size/512), activation='relu')(x)
 
     predictions = Dense(class_count, activation='softmax')(x)
