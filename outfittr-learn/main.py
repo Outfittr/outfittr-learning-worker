@@ -8,12 +8,19 @@
 from .outfitter_model import OutfitterModel, FeatureExtractor, create_multilayer_perceptron, process_outfit_features
 from keras.preprocessing import image
 from keras.applications.resnet50 import ResNet50
+from keras.applications.vgg19 import VGG19
+from keras.applications.vgg16 import VGG16
 from sklearn.model_selection import train_test_split
 import numpy as np
 import os
 import re
 import json
 
+feature_extractors = {
+                      "ResNet50": lambda: ResNet50(weights='imagenet', include_top=False),
+                      "VGG19": lambda: VGG19(weights='imagenet', include_top=False),
+                      "VGG16": lambda: VGG16(weights='imagenet', include_top=False)
+                     }
 
 def get_images(root_dir):
     result = {'tops': [], 'bottoms': []}
@@ -31,7 +38,7 @@ def get_images(root_dir):
 
 
 def extract_all_features(clothing_items):
-    model = FeatureExtractor(ResNet50(weight='imagenet', include_top=False))
+    model = FeatureExtractor(feature_extractors["ResNet50"]())  # index should correspond to wanted feature extractor
     output = {'data': {}}
 
     for i in clothing_items:

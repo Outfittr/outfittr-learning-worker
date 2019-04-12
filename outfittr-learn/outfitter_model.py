@@ -118,9 +118,6 @@ def create_multilayer_perceptron(input_layer_shape, class_count):
 
     x = Dense(math.floor(layer_size/512), activation='relu')(inputs)
     x = Dense(math.floor(layer_size/512), activation='relu')(x)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
 
     predictions = Dense(class_count, activation='softmax')(x)
     return Model(inputs=inputs, outputs=predictions)
