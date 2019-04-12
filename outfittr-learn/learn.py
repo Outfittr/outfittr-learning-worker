@@ -32,24 +32,21 @@ class FeatureExtractor:
 
 class OutfitterModel:
 
-    def __init__(self, load_path, classes, create_perceptron):
+    def __init__(self, load_path, classes, architecture):
         self.load_path = load_path
         self.classes = classes
-        self.create_perceptron = create_perceptron
 
-    def train(self, train_data, device='/device:GPU:0'):
+    def train(self, train_data, architecture, device='/device:GPU:0'):
 
         (train_input, train_output) = train_data
 
         tbcallback = TensorBoard(log_dir='src/', histogram_freq=0, write_graph=True, write_images=True)
 
-        # input_vector = create_model_input_vector(train_input)  # train_input after proper post processing
-
         with tf.device(device):
             try:
                 model = load_model(self.load_path)
             except (ImportError, ValueError, TypeError) as e:
-                model = self.create_perceptron(train_input[0].shape, len(self.classes))
+                model = architecture(train_input[0].shape, len(self.classes))
                 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
                 model.compile(loss='categorical_crossentropy',
                               optimizer=sgd,
@@ -67,8 +64,6 @@ class OutfitterModel:
     def test(self, test_data):
         try:
             (test_input, test_output) = test_data
-
-            # input_vector = create_model_input_vector(test_input)  # test_input after proper post processing
 
             model = load_model(self.load_path)
             test_acc, test_loss = model.evaluate(test_input, np.asarray(test_output))
