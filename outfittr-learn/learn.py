@@ -30,18 +30,20 @@ class FeatureExtractor:
         return self.base_model.predict(x)
 
 
-def train(self, train_data, load_path, model=None, architecture=None, device='/device:GPU:0'):
+def train(train_data, load_path, architecture=None, device='/device:GPU:0'):
     (train_input, train_output) = train_data
 
     tbcallback = TensorBoard(log_dir='src/', histogram_freq=0, write_graph=True, write_images=True)
 
     with tf.device(device):
-        if model is None:
+        try:
+            model = load_model(load_path)
+        except (ImportError, ValueError) as e:
             model = architecture(train_input[0].shape, 5)
             sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
             model.compile(loss='categorical_crossentropy',
-                            optimizer=sgd,
-                            metrics=['accuracy'])
+                          optimizer=sgd,
+                          metrics=['accuracy'])
 
         history = model.fit(train_input, np.asarray(train_output),
                             epochs=20,

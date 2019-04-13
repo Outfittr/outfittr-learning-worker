@@ -5,7 +5,7 @@
     
     The main entry point
 '''
-from .learn import OutfitterModel, FeatureExtractor, create_multilayer_perceptron, process_outfit_features
+from learn import FeatureExtractor, create_multilayer_perceptron, process_outfit_features
 from keras.preprocessing import image
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -29,8 +29,7 @@ def get_images(root_dir):
     return result
 
 
-def extract_all_features(clothing_items):
-    model = FeatureExtractor(feature_extractors["ResNet50"]())  # index should correspond to wanted feature extractor
+def extract_all_features(clothing_items, feature_extractor):
     output = {'data': {}}
 
     for i in clothing_items:
@@ -47,7 +46,7 @@ def extract_all_features(clothing_items):
             url_item = j[0]
             item = image.load_img(url_item, target_size=(224, 224))
             item = image.img_to_array(item)
-            item = model.get_features(item).flatten().tolist()
+            item = feature_extractor.get_features(item).flatten().tolist()
 
             out = open("output/" + i + "/" + str(j[1]) + ".json", "w")
             out.write(json.dumps(item))
