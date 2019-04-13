@@ -7,6 +7,7 @@ usage: main.py [-h] {train,test,extract} ...
 Outfittr Learning Module
 
 positional arguments:
+  
   | Command              | Description                           |
   |----------------------|:----------------------------------------:|
   | {train,test,extract} | Different uses of the Learning Module |
