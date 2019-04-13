@@ -4,6 +4,7 @@ import os
 from keras.applications.resnet50 import ResNet50
 from keras.applications.vgg19 import VGG19
 from keras.applications.vgg16 import VGG16
+from keras.applications.xception import Xception
 
 from learn import train, test, FeatureExtractor, create_multilayer_perceptron
 from data_operations import construct_dataset, train_test_split, get_images, extract_all_features
@@ -11,7 +12,8 @@ from data_operations import construct_dataset, train_test_split, get_images, ext
 feature_extractors = {
                       "ResNet50": lambda: ResNet50(weights='imagenet', include_top=False),
                       "VGG19": lambda: VGG19(weights='imagenet', include_top=False),
-                      "VGG16": lambda: VGG16(weights='imagenet', include_top=False)
+                      "VGG16": lambda: VGG16(weights='imagenet', include_top=False),
+                      "Xception": lambda: Xception(weights='imagenet', include_top=False)
                      }
 
 
