@@ -38,16 +38,16 @@ def train(train_data, load_path, architecture=None, device='/device:GPU:0'):
     with tf.device(device):
         try:
             model = load_model(load_path)
-        except (ImportError, ValueError) as e:
+        except (ImportError, ValueError, OSError) as e:
             model = architecture(train_input[0].shape, 5)
             sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
             model.compile(loss='categorical_crossentropy',
                           optimizer=sgd,
                           metrics=['accuracy'])
 
-        history = model.fit(train_input, np.asarray(train_output),
+        history = model.fit(np.asarray(train_input), np.asarray(train_output),
                             epochs=20,
-                            batch_size=train_input.size,
+                            batch_size=32,
                             callbacks=[tbcallback])
         model.save(load_path)
         del model
@@ -106,7 +106,13 @@ def create_multilayer_perceptron(input_layer_shape, class_count):
     layer_size = 2 ** exp
 
     x = Dense(math.floor(layer_size/512), activation='relu')(inputs)
+    x = Dropout(0.5)(x)
     x = Dense(math.floor(layer_size/512), activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(math.floor(layer_size/512), activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(math.floor(layer_size/512), activation='relu')(x)
+    x = Dropout(0.5)(x)
 
     predictions = Dense(class_count, activation='softmax')(x)
     return Model(inputs=inputs, outputs=predictions)

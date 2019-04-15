@@ -12,7 +12,7 @@ import numpy as np
 import os
 import re
 import json
-
+import cv2
 
 def get_images(root_dir):
     result = {'tops': [], 'bottoms': []}
@@ -31,7 +31,7 @@ def get_images(root_dir):
 
 def extract_all_features(clothing_items, feature_extractor):
     output = {'data': {}}
-
+    
     for i in clothing_items:
         output['data'].update({i: []})
         length = len(clothing_items[i])
@@ -72,19 +72,17 @@ def construct_dataset(surveys, feature_path):
     dataset_output = []
 
     for survey in surveys:
-        rating = np.zeros(5)
-        rating[int(survey['createRating']) - 1] = 1
         context_vector = [ 
             survey['state'],
             survey['sex'],
-            survey['factors']['temperature'],
-            survey['factors']['weather'],
-            survey['factors']['temperature'],
-            survey['factors']['formality'],
-            survey['factors']['season']
+            0,
+            survey['weather'],
+            survey['temperature'],
+            survey['formality'],
+            survey['season']
         ]
 
-        for outfit_type in ['createdOutfit', 'randOutfit']:
+        for outfit_type in ['createdOutfit', 'randomOutfit']:
             # Ensure the outfit type key exists; randOutfit may not
             if outfit_type not in survey:
                 continue
@@ -102,9 +100,52 @@ def construct_dataset(surveys, feature_path):
                 feature_vector = process_outfit_features(clothing_vectors)
                 input_vector = np.concatenate((feature_vector, [np.asarray(context_vector)]), axis=None)
 
+                rating = np.zeros(5)
+
+                rating[int(survey[outfit_type]["rating"]) - 1] = 1
+
                 dataset_input.append(input_vector)
                 dataset_output.append(rating)
             except IOError as e:
                 print('Failure. Skipping survey...', outfit_json)
 
     return dataset_input, dataset_output
+
+
+def format_images(root_dir, size):
+    DESIRED_SIZE = size
+    DESIRED_DIMENSIONS = (DESIRED_SIZE, DESIRED_SIZE)
+    imagepaths = []
+
+    for parent, _, files in os.walk(root_dir):
+        for name in files:
+            if not name.endswith(('.jpg', '.png')):
+                continue
+            path = os.path.join(parent, name)
+            match = re.match(r'.*/(tops|bottoms).*', path)
+            if not match:
+                continue
+            clothing = match.groups()[0]
+
+            imagepaths.append((path, clothing))
+
+    length = len(imagepaths)
+    i = 0
+    for path, clothing,  in imagepaths:
+        print(str(i) + '/' + str(length))
+        image = cv2.imread(path, cv2.IMREAD_COLOR)
+        old_size = image.shape[:2]
+
+        ratio = float(DESIRED_SIZE) / max(old_size)
+        new_size = tuple([int(x * ratio) for x in old_size])
+        delta_width = DESIRED_SIZE - new_size[1]
+        delta_height = DESIRED_SIZE - new_size[0]
+        top, bottom = delta_height // 2, delta_height - (delta_height // 2)
+        left, right = delta_width // 2, delta_width - (delta_width // 2)
+
+        image = cv2.resize(image, new_size[::-1])
+        image = cv2.copyMakeBorder(image,
+                                   top, bottom, left, right,
+                                   cv2.BORDER_REPLICATE)
+        cv2.imwrite(path, image)
+        i += 1

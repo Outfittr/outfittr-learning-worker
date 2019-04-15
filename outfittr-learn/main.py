@@ -7,7 +7,7 @@ from keras.applications.vgg16 import VGG16
 from keras.applications.xception import Xception
 
 from learn import train, test, FeatureExtractor, create_multilayer_perceptron
-from data_operations import construct_dataset, train_test_split, get_images, extract_all_features
+from data_operations import construct_dataset, train_test_split, get_images, extract_all_features, format_images
 
 feature_extractors = {
                       "ResNet50": lambda: ResNet50(weights='imagenet', include_top=False),
@@ -73,6 +73,20 @@ parser_extract.add_argument('-d',
                             required=True)
 parser_extract.set_defaults(which='extract')
 
+""" Format Images """
+parser_extract = subparsers.add_parser('format', help='Format images for feature extraction')
+parser_extract.add_argument('-d',
+                            '--data',
+                            help='Directory of images to format',
+                            type=str,
+                            required=True)
+parser_extract.add_argument('-s',
+                            '--size',
+                            help='Desired size of the images',
+                            type=int,
+                            required=True)
+parser_extract.set_defaults(which='format')
+
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -82,10 +96,10 @@ if __name__ == "__main__":
             # Check if data files exist
             if not os.path.exists(args.data):
                 raise FileNotFoundError("Data path does not exist")
-            if not os.path.exists(os.path.normpath(os.path.join(args.data, './survey.json'))):
+            if not os.path.exists(os.path.normpath(os.path.join(args.data, 'surveys.json'))):
                 raise FileNotFoundError("Data-point file does not exist")
 
-            _surveys = json.load(open(os.path.join(args.data, './survey.json')))
+            _surveys = json.load(open(os.path.join(args.data, 'surveys.json')))
             dataset = construct_dataset(_surveys, args.data)
             train_in, test_in, train_out, test_out = train_test_split(dataset[0],
                                                                       dataset[1],
@@ -95,7 +109,7 @@ if __name__ == "__main__":
             history = train((train_in, train_out),
                             load_path=args.output,
                             architecture=create_multilayer_perceptron,
-                            device='/device:CPU:0')
+                            device='/device:GPU:0')
 
         except FileNotFoundError as e:
             print(e)
@@ -114,9 +128,10 @@ if __name__ == "__main__":
         try:
             if args.data is None or args.extractor is None:
                 raise Exception("Data or Extractor is invalid")
-
             items = get_images(args.data)
-            extract_all_features(clothing_items=items, feature_extractor=feature_extractors[args.extractor])
+            extract_all_features(clothing_items=items, feature_extractor=FeatureExtractor(feature_extractors[args.extractor]()))
         except Exception as e:
             print(e)
             raise
+    elif args.which is 'format':
+        format_images(args.data, args.size)
