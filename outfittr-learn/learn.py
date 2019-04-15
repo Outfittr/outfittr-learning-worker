@@ -97,7 +97,7 @@ def parse_labels(labels, label_count=10):
     return np.array(ret_array)
 
 
-def create_multilayer_perceptron(input_layer_shape, class_count):
+def create_square_512(input_layer_shape, class_count, hidden_count):
     """Create the multilayer perceptron to be used in the train method"""
 
     inputs = Input(shape=input_layer_shape)
@@ -105,14 +105,58 @@ def create_multilayer_perceptron(input_layer_shape, class_count):
     exp = math.floor(math.log(input_layer_shape[0], 2.0))
     layer_size = 2 ** exp
 
-    x = Dense(math.floor(layer_size/512), activation='relu')(inputs)
-    x = Dropout(0.5)(x)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
-    x = Dropout(0.5)(x)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
-    x = Dropout(0.5)(x)
-    x = Dense(math.floor(layer_size/512), activation='relu')(x)
-    x = Dropout(0.5)(x)
+    x = inputs
+    for i in range(hidden_count):
+        x = Dense(math.floor(layer_size/512), activation='relu')(x)
 
     predictions = Dense(class_count, activation='softmax')(x)
     return Model(inputs=inputs, outputs=predictions)
+
+
+def create_triangular_512(input_layer_shape, class_count, hidden_count):
+    inputs = Input(shape=input_layer_shape)
+
+    exp = math.floor(math.log(input_layer_shape[0], 2.0))
+    layer_size = 2 ** exp
+
+    x = inputs
+    for i in range(hidden_count):
+        x = Dense(math.floor(layer_size/(512 * (i+1)))), activation='relu')(x)
+
+    predictions = Dense(class_count, activation='softmax')(x)
+    return Model(inputs=inputs, outputs=predictions)
+
+
+def create_sine_512(input_layer_shape, class_count, hidden_count):
+    inputs = Input(shape=input_layer_shape)
+
+    x = inputs
+    for i in range(hidden_count):
+        exp = math.floor(math.log(input_layer_shape[0] * (1 - math.sin(i)), 2.0))
+        layer_size = 2 ** exp
+        x = Dense(math.floor(layer_size/512), activation='relu')(x)
+
+    predictions = Dense(class_count, activation='softmax')(x)
+    return Model(inputs=inputs, outputs=predictions)
+
+
+def create_triangular_512_dropout(input_layer_shape, class_count):
+    inputs = Input(shape=input_layer_shape)
+
+    exp = math.floor(math.log(input_layer_shape[0], 2.0))
+    layer_size = 2 ** exp
+
+    x = inputs
+    for i in range(hidden_count):
+        x = Dense(math.floor(layer_size/(512 * (i+1)))), activation='relu')(x)
+        x = Dropout(0.5)(x)
+
+    predictions = Dense(class_count, activation='softmax')(x)
+    return Model(inputs=inputs, outputs=predictions)
+
+perceptron_architectures = {
+    "Square512": create_square_512,
+    "Triangular512": create_triangular_512,
+    "Sine512": create_sine_512,
+    "Triangular512Dropout": create_triangular_512_dropout
+}

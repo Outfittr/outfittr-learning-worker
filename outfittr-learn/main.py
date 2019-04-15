@@ -6,7 +6,7 @@ from keras.applications.vgg19 import VGG19
 from keras.applications.vgg16 import VGG16
 from keras.applications.xception import Xception
 
-from learn import train, test, FeatureExtractor, create_multilayer_perceptron
+from learn import train, test, FeatureExtractor, perceptron_architectures
 from data_operations import construct_dataset, train_test_split, get_images, extract_all_features, format_images
 
 feature_extractors = {
@@ -28,9 +28,11 @@ parser_train.add_argument('-d',
                           help='Dataset path',
                           type=str,
                           required=True)
-# parser_train.add_argument('-a',
-#                           '--arch',
-#                           help='The path to the JSON architecture of the model')
+parser_train.add_argument('-a',
+                          '--arch',
+                          choices=list(perceptron_architectures.keys()),
+                          help='The path to the JSON architecture of the model',
+                          required=True)
 parser_train.add_argument('-o',
                           '--output',
                           help='The output file model (.h5) path',
@@ -108,7 +110,7 @@ if __name__ == "__main__":
 
             history = train((train_in, train_out),
                             load_path=args.output,
-                            architecture=create_multilayer_perceptron,
+                            architecture=perceptron_architectures[args.arch],
                             device='/device:GPU:0')
 
         except FileNotFoundError as e:
